@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRIGSFLIX</title>
+    <title>Upcoming Movies • Movie Love</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -16,16 +16,16 @@
         <div class="nav-container">
             <!-- Logo -->
             <div class="logo">
-                BRIGS<span class="logo-love">FLIX</span>
+                Movie <span class="logo-love">Love</span>
             </div>
 
             <!-- Menu -->
             <div class="nav-menu">
-                <a href="index.html" class="nav-link active">Home</a>
+                <a href="index.html" class="nav-link">Home</a>
                 <a href="tvshows.html" class="nav-link">TV Shows</a>
                 <a href="movies.html" class="nav-link">Movies</a>
                 <a href="comedy.html" class="nav-link">Comedy</a>
-                <a href="upcoming.html" class="nav-link">Upcoming</a>
+                <a href="upcoming.html" class="nav-link active">Upcoming</a>
             </div>
 
             <!-- Search -->
@@ -43,115 +43,47 @@
         </div>
     </nav>
 
-    <!-- HERO SECTION - CAROUSEL -->
-    <section id="hero" class="hero">
-        <div class="carousel-container">
-            <div class="carousel-wrapper">
-                <div class="carousel-slide active" id="carousel-slide-0">
-                    <div class="hero-background"></div>
-                    <div class="hero-overlay"></div>
-                    <div class="hero-content">
-                        <div class="hero-badge" id="hero-type">TRENDING #1</div>
-                        <h1 id="hero-title" class="hero-title">Loading featured movie...</h1>
-                        <div class="hero-meta">
-                            <span id="hero-year" class="hero-year"></span>
-                            <span id="hero-rating" class="hero-rating"></span>
-                        </div>
-                        <p id="hero-description" class="hero-description"></p>
-                        
-                        <div class="hero-buttons">
-                            <button id="play-btn" class="btn-play">
-                                <i class="fas fa-play"></i>
-                                PLAY
-                            </button>
-                            <button id="info-btn" class="btn-info">
-                                <i class="fas fa-circle-info"></i> More Info
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Carousel Navigation -->
-            <div class="carousel-nav">
-                <button class="carousel-prev" id="carousel-prev">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button class="carousel-next" id="carousel-next">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-
-            <!-- Carousel Indicators -->
-            <div class="carousel-indicators" id="carousel-indicators"></div>
-
-            <!-- NOW STREAMING Badge -->
-            <div class="hero-trailer-badge">
-                <span>NOW STREAMING</span>
-            </div>
+    <!-- PAGE HEADER -->
+    <section class="page-header">
+        <div class="page-header-content">
+            <h1 class="page-title">
+                <i class="fas fa-calendar-days"></i>
+                Coming Soon
+            </h1>
+            <p class="page-subtitle">Exciting movies coming to your screen</p>
         </div>
     </section>
 
-    <!-- CATEGORY FILTERS -->
-    <div class="category-bar">
-        <div class="category-container">
-            <button class="category-btn active" data-genre-id="">ALL</button>
-            <button class="category-btn" data-genre-id="28">Action</button>
-            <button class="category-btn" data-genre-id="35">Comedy</button>
-            <button class="category-btn" data-genre-id="18">Series</button>
-            <button class="category-btn" data-genre-id="12">Adventure</button>
-            <button class="category-btn" data-genre-id="27">Horror</button>
-            <button class="category-btn" data-genre-id="10751">Family</button>
+    <!-- FILTERS -->
+    <div class="filters-bar">
+        <div class="filters-container">
+            <div class="filter-group">
+                <label for="sort-select">Sort By:</label>
+                <select id="sort-select" class="filter-select">
+                    <option value="release_date.asc">Release Date (Earliest)</option>
+                    <option value="release_date.desc">Release Date (Latest)</option>
+                    <option value="popularity.desc">Popularity</option>
+                    <option value="vote_average.desc">Rating</option>
+                </select>
+            </div>
         </div>
     </div>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-
-        <!-- DISCOVER / MOST VIEWED SECTION (dynamic) -->
-        <section class="movie-row">
-            <div class="row-header">
-                <h2 id="discover-title" class="row-title">Most Viewed</h2>
-                <a href="#" class="view-all">View all <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="horizontal-scroll" id="discover-row">
+        <!-- UPCOMING MOVIES GRID -->
+        <section class="upcoming-section">
+            <div class="upcoming-grid" id="upcoming-grid">
                 <!-- Populated by JS -->
             </div>
         </section>
 
-        <!-- POPULAR MOVIES -->
-        <section class="movie-row">
-            <div class="row-header">
-                <h2 class="row-title">Popular on Movie Love</h2>
-                <a href="#" class="view-all">View all <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="horizontal-scroll" id="popular-row">
-                <!-- Populated by JS -->
-            </div>
-        </section>
-
-        <!-- TOP RATED -->
-        <section class="movie-row">
-            <div class="row-header">
-                <h2 class="row-title">Top Rated This Week</h2>
-                <a href="#" class="view-all">View all <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="horizontal-scroll" id="top-rated-row">
-                <!-- Populated by JS -->
-            </div>
-        </section>
-
-        <!-- UPCOMING -->
-        <section class="movie-row">
-            <div class="row-header">
-                <h2 class="row-title">Coming Soon</h2>
-                <a href="#" class="view-all">View all <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="horizontal-scroll" id="upcoming-row">
-                <!-- Populated by JS -->
-            </div>
-        </section>
-
+        <!-- LOAD MORE -->
+        <div class="load-more-container">
+            <button id="load-more-btn" class="btn-load-more">
+                Load More <i class="fas fa-arrow-down"></i>
+            </button>
+        </div>
     </main>
 
     <!-- FOOTER -->
@@ -282,6 +214,6 @@
         </div>
     </div>
 
-    <script src="assets/js/main.js"></script>
+    <script src="assets/js/upcoming.js"></script>
 </body>
 </html>
