@@ -44,20 +44,118 @@ function getImageUrl(path, size = POSTER_SIZE) {
 }
 
 function generateMovieEpisodes(movie) {
-    const runtime = movieDetails[movie.id]?.runtime || 120; // Default to 120 minutes if no runtime
-    const episodeCount = Math.max(3, Math.min(8, Math.floor(runtime / 20))); // 3-8 episodes based on runtime
-    const episodeLength = Math.floor(runtime / episodeCount);
-    
+    const runtime = movieDetails[movie.id]?.runtime || 120;
+    const episodeCount = Math.max(3, Math.min(8, Math.floor(runtime / 20)));
+
     const episodes = [];
     for (let i = 1; i <= episodeCount; i++) {
         episodes.push({
             number: i,
-            title: `Part ${i}`,
-            duration: `${episodeLength} min`,
-            description: `Watch Part ${i} of ${movie.title}`
+            title: `EP ${i}`,
+            description: `Watch EP ${i} of ${movie.title}`
         });
     }
     return episodes;
+}
+
+function getEmbedUrl(type, id, season = 1, episode = 1) {
+    if (type === 'tv') {
+        return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`;
+    }
+    return `https://vidsrc.to/embed/movie/${id}`;
+}
+
+async function fetchTVShowEpisodes(tvId, seasonNumber = 1) {
+    try {
+        const response = await fetch(`${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${API_KEY}`);
+        const data = await response.json();
+        return data.episodes || [];
+    } catch (error) {
+        console.error("Error fetching TV episodes:", error);
+        return [];
+    }
+}
+
+function showAllEpisodesModal(movie, baseEpisodes) {
+    const runtime = movieDetails[movie.id]?.runtime || 120;
+    const baseEpisodeCount = Math.max(3, Math.min(8, Math.floor(runtime / 20)));
+    const totalCount = baseEpisodeCount + 7;
+    const episodeLength = Math.floor(runtime / baseEpisodeCount);
+
+    const episodes = [];
+    for (let i = 1; i <= totalCount; i++) {
+        episodes.push({
+            number: i,
+            title: `EP ${i}`,
+            duration: `${episodeLength} min`,
+            description: `Watch EP ${i} of ${movie.title || movie.name}`
+        });
+    }
+
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'all-episodes-modal';
+
+    modalDiv.innerHTML = `
+        <div class="all-episodes-content">
+            <div class="all-episodes-header">
+                <h3><i class="fas fa-list"></i> All Episodes - ${movie.title || movie.name || "Untitled"}</h3>
+                <button class="all-episodes-close">&times;</button>
+            </div>
+            <div class="all-episodes-list">
+                ${episodes.map(episode => `
+                    <div class="episode-item" data-episode="${episode.number}">
+                        <div class="episode-number">${episode.number}</div>
+                        <div class="episode-info">
+                            <div class="episode-title">${episode.title}</div>
+                            <div class="episode-meta">${episode.duration}</div>
+                        </div>
+                        <div class="episode-actions">
+                            <button class="episode-download-btn" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="episode-play-btn" title="Play">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalDiv);
+
+    modalDiv.querySelector('.all-episodes-close').addEventListener('click', () => {
+        modalDiv.remove();
+    });
+
+    modalDiv.addEventListener('click', (e) => {
+        if (e.target === modalDiv) {
+            modalDiv.remove();
+        }
+    });
+
+    modalDiv.querySelectorAll('.episode-item').forEach(item => {
+        item.addEventListener('click', () => {
+            item.classList.toggle('show-download');
+        });
+
+        const playBtn = item.querySelector('.episode-play-btn');
+        if (playBtn) {
+            playBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                alert(`🎬 Playing ${movie.title || movie.name || "Untitled"} - EP ${item.dataset.episode}\n\n(This would play the specific EP of the movie in a real app!)`);
+            });
+        }
+
+        const downloadBtn = item.querySelector('.episode-download-btn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                alert(`📥 Downloading ${movie.title || movie.name || "Untitled"} - EP ${item.dataset.episode}...`);
+            });
+        }
+    });
 }
 
 async function fetchMovieCredits(movieId) {
@@ -110,24 +208,24 @@ function showTrailerModal(trailerKey, title) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(trailerModal);
 }
 
 function createMovieCard(movie) {
     const card = document.createElement("div");
     card.className = "upcoming-card";
-    
+
     const title = movie.title || "Untitled";
     const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
     const releaseDate = movie.release_date || "TBA";
     const year = releaseDate !== "TBA" ? releaseDate.split("-")[0] : "TBA";
     const runtime = movieDetails[movie.id]?.runtime || "N/A";
-    
-    const backdropUrl = movie.backdrop_path 
-        ? `${IMG_BASE}original${movie.backdrop_path}` 
+
+    const backdropUrl = movie.backdrop_path
+        ? `${IMG_BASE}original${movie.backdrop_path}`
         : "https://via.placeholder.com/1920x1080/141414/fff?text=No+Image";
-    
+
     card.innerHTML = `
         <img src="${getImageUrl(movie.poster_path)}" alt="${title}" class="upcoming-card-image">
         <div class="upcoming-card-content">
@@ -155,13 +253,13 @@ function createMovieCard(movie) {
             </div>
         </div>
     `;
-    
+
     // Click handler for More Info button
     card.querySelector(".upcoming-card-button").addEventListener("click", (e) => {
         const btn = e.currentTarget;
         const movieId = btn.dataset.movieId;
         const movie = movies.find(m => m.id == movieId);
-        
+
         modalBackdrop.style.backgroundImage = `url('${btn.dataset.backdrop}')`;
         modalTitle.textContent = btn.dataset.title;
         modalDescription.textContent = btn.dataset.description || "No description available.";
@@ -172,34 +270,64 @@ function createMovieCard(movie) {
         modalRuntime.innerHTML = `<i class="fas fa-clock"></i> ${runtimeText}`;
         const language = movieDetails[movieId]?.original_language || "N/A";
         modalLanguage.innerHTML = language !== "N/A" ? `<i class="fas fa-globe"></i> ${language.toUpperCase()}` : "";
-        
+
         // Generate and display episodes
         if (movie) {
-            const episodes = generateMovieEpisodes(movie);
+            const isTV = !!movie.first_air_date;
+            const type = isTV ? 'tv' : 'movie';
+            let episodes = [];
+
+            if (isTV) {
+                episodes = await fetchTVShowEpisodes(movie.id, 1);
+            } else {
+                episodes = generateMovieEpisodes(movie);
+            }
+
             modalEpisodes.innerHTML = `
-                <h3><i class="fas fa-list"></i> Movie Parts</h3>
+                <h3><i class="fas fa-list"></i> ${isTV ? 'Episodes' : 'Movie Parts'}</h3>
+                <div id="video-player-container" class="modal-video-section"></div>
                 <div class="episodes-list">
-                    ${episodes.map(episode => `
-                        <div class="episode-item" data-episode="${episode.number}">
-                            <div class="episode-number">${episode.number}</div>
-                            <div class="episode-info">
-                                <div class="episode-title">${episode.title}</div>
-                                <div class="episode-meta">${episode.duration}</div>
+                    ${episodes.map(ep => {
+                const epNum = ep.episode_number || ep.number;
+                const epTitle = ep.name || ep.title || `Episode ${epNum}`;
+                return `
+                            <div class="episode-item" data-episode="${epNum}">
+                                <div class="episode-number">${epNum}</div>
+                                <div class="episode-info">
+                                    <div class="episode-title">${epTitle}</div>
+                                </div>
+                                <button class="episode-play-btn">
+                                    <i class="fas fa-play"></i>
+                                </button>
                             </div>
-                            <button class="episode-play-btn">
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                    `).join('')}
+                        `;
+            }).join('')}
                 </div>
             `;
-            
-            // Add click handlers for episode play buttons
-            modalEpisodes.querySelectorAll('.episode-play-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    alert(`🎬 Playing ${movie.title} - Part ${btn.closest('.episode-item').dataset.episode}\n\n(This would play the specific part of the movie in a real app!)`);
+
+            // Add click handlers for episodes
+            modalEpisodes.querySelectorAll('.episode-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const epNum = item.dataset.episode;
+                    const backdropPlayer = document.getElementById('backdrop-player');
+                    const embedUrl = getEmbedUrl(type, movie.id, 1, epNum);
+
+                    if (backdropPlayer) {
+                        backdropPlayer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+                        backdropPlayer.classList.add('active');
+                    }
+
+                    document.querySelector('.modal-content').scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
+
+            // Load More handler
+            const loadMoreEpsBtn = modalEpisodes.querySelector('.load-more-episodes');
+            if (loadMoreEpsBtn) {
+                loadMoreEpsBtn.addEventListener('click', () => {
+                    showAllEpisodesModal(movie);
+                });
+            }
 
             // Fetch and display cast
             const cast = await fetchMovieCredits(movie.id);
@@ -223,7 +351,7 @@ function createMovieCard(movie) {
                     <p style="color: #aaa; font-size: 14px;">Cast information not available.</p>
                 `;
             }
-            
+
             // Fetch and display recommendations
             const recommendations = await fetchMovieRecommendations(movie.id);
             if (recommendations.length > 0) {
@@ -250,7 +378,7 @@ function createMovieCard(movie) {
                     <p style="color: #aaa; font-size: 14px;">No recommendations available.</p>
                 `;
             }
-            
+
             // Fetch and display trailer
             const trailerKey = await fetchMovieTrailer(movie.id);
             if (trailerKey) {
@@ -269,17 +397,17 @@ function createMovieCard(movie) {
                 `;
             }
         }
-        
+
         modal.style.display = "flex";
     });
-    
+
     // Click handler for Trailer button
     card.querySelector(".upcoming-card-trailer").addEventListener("click", async (e) => {
         e.stopPropagation(); // Prevent triggering the card click
         const btn = e.currentTarget;
         const movieId = btn.dataset.movieId;
         const title = btn.dataset.title;
-        
+
         // Fetch trailer and show it
         const trailerKey = await fetchMovieTrailer(movieId);
         if (trailerKey) {
@@ -288,7 +416,7 @@ function createMovieCard(movie) {
             alert("Trailer not available for this movie.");
         }
     });
-    
+
     return card;
 }
 
@@ -306,12 +434,12 @@ function showSkeletons(count = 12) {
 }
 
 // ====================== API CALLS ======================
-async function fetchData(endpoint) {
+async function fetchData(endpoint, page = 1) {
     if (!API_KEY || API_KEY === "YOUR_TMDB_API_KEY") {
         console.error("❌ Please replace YOUR_TMDB_API_KEY with a real TMDB API key!");
         return { results: [] };
     }
-    
+
     try {
         const separator = endpoint.includes('?') ? '&' : '?';
         const url = `${BASE_URL}${endpoint}${separator}api_key=${API_KEY}&language=en-US`;
@@ -328,7 +456,7 @@ async function fetchData(endpoint) {
 async function fetchMovieDetails(movieId) {
     const data = await fetchData(`/movie/${movieId}`);
     if (data.runtime || data.original_language) {
-        movieDetails[movieId] = { 
+        movieDetails[movieId] = {
             runtime: data.runtime,
             original_language: data.original_language
         };
@@ -377,14 +505,14 @@ function displayMovies(startIdx = 0, endIdx = LOAD_PER_PAGE) {
     if (startIdx === 0) {
         moviesGrid.innerHTML = "";
     }
-    
+
     for (let i = startIdx; i < Math.min(endIdx, movies.length); i++) {
         const card = createMovieCard(movies[i]);
         moviesGrid.appendChild(card);
     }
-    
+
     displayedCount = Math.min(endIdx, movies.length);
-    
+
     // Show/hide load more button
     if (displayedCount >= movies.length) {
         loadMoreBtn.style.display = "none";
@@ -392,6 +520,73 @@ function displayMovies(startIdx = 0, endIdx = LOAD_PER_PAGE) {
         loadMoreBtn.style.display = "inline-flex";
     }
 }
+
+// Function to fetch and display all movies in a vertical layout
+async function displayAllMovies() {
+    const moviesGrid = document.getElementById("movies-grid");
+    moviesGrid.innerHTML = ""; // Clear existing content
+
+    try {
+        const response = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&page=1`);
+        const data = await response.json();
+        const movies = data.results;
+
+        movies.forEach(movie => {
+            const movieItem = document.createElement("div");
+            movieItem.className = "movie-item";
+            movieItem.style.display = "flex";
+            movieItem.style.flexDirection = "column";
+            movieItem.style.marginBottom = "20px";
+
+            movieItem.innerHTML = `
+                <img src="${getImageUrl(movie.poster_path)}" alt="${movie.title}" style="width: 200px; height: auto;">
+                <h3>${movie.title}</h3>
+                <p>${movie.overview || "No description available."}</p>
+                <p><strong>Rating:</strong> ${movie.vote_average.toFixed(1)}</p>
+            `;
+
+            moviesGrid.appendChild(movieItem);
+        });
+    } catch (error) {
+        console.error("Error fetching movies:", error);
+        moviesGrid.innerHTML = "<p>Failed to load movies. Please try again later.</p>";
+    }
+}
+
+// Function to fetch and display Nollywood movies
+async function displayNollywoodMovies() {
+    const moviesGrid = document.getElementById("movies-grid");
+    moviesGrid.innerHTML = ""; // Clear existing content
+
+    try {
+        const response = await fetch(`${BASE_URL}/discover/movie?api_key=${API_KEY}&with_original_language=ig,yo,ha`);
+        const data = await response.json();
+        const movies = data.results;
+
+        movies.forEach(movie => {
+            const movieItem = document.createElement("div");
+            movieItem.className = "movie-item";
+            movieItem.style.display = "flex";
+            movieItem.style.flexDirection = "column";
+            movieItem.style.marginBottom = "20px";
+
+            movieItem.innerHTML = `
+                <img src="${getImageUrl(movie.poster_path)}" alt="${movie.title}" style="width: 200px; height: auto;">
+                <h3>${movie.title}</h3>
+                <p>${movie.overview || "No description available."}</p>
+                <p><strong>Rating:</strong> ${movie.vote_average.toFixed(1)}</p>
+            `;
+
+            moviesGrid.appendChild(movieItem);
+        });
+    } catch (error) {
+        console.error("Error fetching Nollywood movies:", error);
+        moviesGrid.innerHTML = "<p>Failed to load Nollywood movies. Please try again later.</p>";
+    }
+}
+
+// Call the function to display movies on page load
+displayAllMovies();
 
 // ====================== EVENT LISTENERS ======================
 sortSelect.addEventListener("change", async (e) => {
@@ -424,10 +619,10 @@ loadMoreBtn.addEventListener("click", async () => {
 let searchTimeout;
 searchInput.addEventListener("input", async () => {
     clearTimeout(searchTimeout);
-    
+
     searchTimeout = setTimeout(async () => {
         const query = searchInput.value.trim();
-        
+
         if (query.length < 2) {
             currentQuery = "";
             currentPage = 1;
@@ -436,7 +631,7 @@ searchInput.addEventListener("input", async () => {
             displayMovies(0, LOAD_PER_PAGE);
             return;
         }
-        
+
         currentQuery = query;
         currentPage = 1;
         showSkeletons();
@@ -457,12 +652,12 @@ searchInput.addEventListener("keydown", (e) => {
 
 searchBtn.addEventListener("click", async () => {
     const query = searchInput.value.trim();
-    
+
     if (query.length < 2) {
         searchInput.focus();
         return;
     }
-    
+
     currentQuery = query;
     currentPage = 1;
     showSkeletons();
@@ -538,9 +733,23 @@ populateCategories();
 
 // ====================== MODAL ======================
 function initModal() {
-    modalClose.addEventListener("click", () => modal.style.display = "none");
-    document.getElementById("modal-close-btn").addEventListener("click", () => modal.style.display = "none");
-    
+    modalClose.addEventListener("click", () => {
+        modal.style.display = "none";
+        const backdropPlayer = document.getElementById('backdrop-player');
+        if (backdropPlayer) {
+            backdropPlayer.innerHTML = '';
+            backdropPlayer.classList.remove('active');
+        }
+    });
+    document.getElementById("modal-close-btn").addEventListener("click", () => {
+        modal.style.display = "none";
+        const backdropPlayer = document.getElementById('backdrop-player');
+        if (backdropPlayer) {
+            backdropPlayer.innerHTML = '';
+            backdropPlayer.classList.remove('active');
+        }
+    });
+
     modalPlayBtn.addEventListener("click", () => {
         modalPlayBtn.innerHTML = `
             <i class="fas fa-play"></i>
@@ -549,25 +758,25 @@ function initModal() {
         setTimeout(() => {
             alert("🎬 In a real app this would play the movie or trailer from TMDB/YouTube.\n\n(Everything else is fully functional!)");
             modalPlayBtn.innerHTML = `
-                <i class="fas fa-play"></i>
-                WATCH NOW
-            `;
+            <i class="fas fa-play"></i>
+            WATCH NOW
+        `;
         }, 1200);
     });
-    
+
     // Action buttons event listeners
     const downloadBtn = document.getElementById("download-btn");
     const watchlistBtn = document.getElementById("watchlist-btn");
     const reportBtn = document.getElementById("report-btn");
     const shareBtn = document.getElementById("share-btn");
-    
+
     if (downloadBtn) {
         downloadBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             alert("📥 Download feature would be available in premium version.");
         });
     }
-    
+
     if (watchlistBtn) {
         watchlistBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -579,14 +788,14 @@ function initModal() {
             }, 2000);
         });
     }
-    
+
     if (reportBtn) {
         reportBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             alert("⚠️ Thank you for reporting. Our team will review this content.");
         });
     }
-    
+
     if (shareBtn) {
         shareBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -594,7 +803,7 @@ function initModal() {
             alert(`📤 Share: ${movieTitle}\n\nShare options:\n- Facebook\n- Twitter\n- WhatsApp\n- Copy Link`);
         });
     }
-    
+
     modal.addEventListener("click", (e) => {
         if (e.target === modal) modal.style.display = "none";
     });
@@ -605,11 +814,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (API_KEY === "YOUR_TMDB_API_KEY") {
         console.warn("%c⚠️  TMDB API KEY MISSING – replace in movies.js", "color:#ffd700; font-size:18px");
     }
-    
+
     showSkeletons();
     await fetchMovies();
     displayMovies(0, LOAD_PER_PAGE);
     initModal();
-    
+
     console.log("%c✅ Movies page loaded!", "color:#00d0ff; font-weight:700");
 });

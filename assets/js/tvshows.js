@@ -47,18 +47,18 @@ async function fetchTVShowCredits(tvId) {
 function createTVShowCard(tvshow) {
     const card = document.createElement("div");
     card.className = "upcoming-card";
-    
+
     const title = tvshow.name || tvshow.title || "Untitled";
     const rating = tvshow.vote_average ? tvshow.vote_average.toFixed(1) : "N/A";
     const firstAirDate = tvshow.first_air_date || "TBA";
     const year = firstAirDate !== "TBA" ? firstAirDate.split("-")[0] : "TBA";
     const seasons = tvshow.number_of_seasons || "N/A";
     const episodes = tvshow.number_of_episodes || "N/A";
-    
-    const backdropUrl = tvshow.backdrop_path 
-        ? `${IMG_BASE}original${tvshow.backdrop_path}` 
+
+    const backdropUrl = tvshow.backdrop_path
+        ? `${IMG_BASE}original${tvshow.backdrop_path}`
         : "https://via.placeholder.com/1920x1080/141414/fff?text=No+Image";
-    
+
     card.innerHTML = `
         <img src="${getImageUrl(tvshow.poster_path)}" alt="${title}" class="upcoming-card-image">
         <div class="upcoming-card-content">
@@ -80,7 +80,7 @@ function createTVShowCard(tvshow) {
             </button>
         </div>
     `;
-    
+
     // Click handler for More Info button
     card.querySelector(".upcoming-card-button").addEventListener("click", async (e) => {
         const btn = e.currentTarget;
@@ -91,7 +91,7 @@ function createTVShowCard(tvshow) {
         modalYear.textContent = btn.dataset.year;
         modalRating.innerHTML = `<i class="fas fa-star"></i> ${btn.dataset.rating}`;
         modalSeasons.innerHTML = `<i class="fas fa-play-circle"></i> ${btn.dataset.seasons} Seasons • ${btn.dataset.episodes} Episodes`;
-        
+
         // Fetch and display cast
         const cast = await fetchTVShowCredits(tvId);
         const modalCast = document.getElementById("modal-cast");
@@ -114,10 +114,10 @@ function createTVShowCard(tvshow) {
                 <p style="color: #aaa; font-size: 14px;">Cast information not available.</p>
             `;
         }
-        
+
         modal.style.display = "flex";
     });
-    
+
     return card;
 }
 
@@ -140,7 +140,7 @@ async function fetchData(endpoint) {
         console.error("❌ Please replace YOUR_TMDB_API_KEY with a real TMDB API key!");
         return { results: [] };
     }
-    
+
     try {
         const separator = endpoint.includes('?') ? '&' : '?';
         const url = `${BASE_URL}${endpoint}${separator}api_key=${API_KEY}&language=en-US`;
@@ -157,7 +157,7 @@ async function fetchData(endpoint) {
 async function fetchTVShows() {
     let endpoint = `/tv/on_the_air?sort_by=${currentSort}`;
     const data = await fetchData(endpoint);
-    
+
     if (data.results) {
         // Filter out TV shows without poster
         tvshows = data.results
@@ -181,14 +181,14 @@ function displayTVShows(startIdx = 0, endIdx = LOAD_PER_PAGE) {
     if (startIdx === 0) {
         tvshowsGrid.innerHTML = "";
     }
-    
+
     for (let i = startIdx; i < Math.min(endIdx, tvshows.length); i++) {
         const card = createTVShowCard(tvshows[i]);
         tvshowsGrid.appendChild(card);
     }
-    
+
     displayedCount = Math.min(endIdx, tvshows.length);
-    
+
     // Show/hide load more button
     if (displayedCount >= tvshows.length) {
         loadMoreBtn.style.display = "none";
@@ -213,19 +213,19 @@ loadMoreBtn.addEventListener("click", () => {
 let searchTimeout;
 searchInput.addEventListener("input", async () => {
     clearTimeout(searchTimeout);
-    
+
     searchTimeout = setTimeout(async () => {
         const query = searchInput.value.trim();
-        
+
         if (query.length < 2) {
             await fetchTVShows();
             displayTVShows(0, LOAD_PER_PAGE);
             return;
         }
-        
+
         showSkeletons();
         const searchData = await fetchData(`/search/tv?query=${encodeURIComponent(query)}`);
-        
+
         if (searchData.results) {
             tvshows = searchData.results
                 .filter(show => show.poster_path)
@@ -246,16 +246,16 @@ searchInput.addEventListener("keydown", (e) => {
 
 searchBtn.addEventListener("click", async () => {
     const query = searchInput.value.trim();
-    
+
     if (query.length < 2) {
         searchInput.focus();
         return;
     }
-    
+
     showSkeletons();
     try {
         const searchData = await fetchData(`/search/tv?query=${encodeURIComponent(query)}`);
-        
+
         if (searchData.results) {
             tvshows = searchData.results
                 .filter(show => show.poster_path)
@@ -272,7 +272,7 @@ searchBtn.addEventListener("click", async () => {
 function initModal() {
     modalClose.addEventListener("click", () => modal.style.display = "none");
     document.getElementById("modal-close-btn").addEventListener("click", () => modal.style.display = "none");
-    
+
     modalPlayBtn.addEventListener("click", () => {
         modalPlayBtn.innerHTML = `
             <i class="fas fa-play"></i>
@@ -286,20 +286,20 @@ function initModal() {
             `;
         }, 1200);
     });
-    
+
     // Action buttons event listeners
     const downloadBtn = document.getElementById("download-btn");
     const watchlistBtn = document.getElementById("watchlist-btn");
     const reportBtn = document.getElementById("report-btn");
     const shareBtn = document.getElementById("share-btn");
-    
+
     if (downloadBtn) {
         downloadBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             alert("📥 Download feature would be available in premium version.");
         });
     }
-    
+
     if (watchlistBtn) {
         watchlistBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -311,14 +311,14 @@ function initModal() {
             }, 2000);
         });
     }
-    
+
     if (reportBtn) {
         reportBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             alert("⚠️ Thank you for reporting. Our team will review this content.");
         });
     }
-    
+
     if (shareBtn) {
         shareBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -326,7 +326,7 @@ function initModal() {
             alert(`📤 Share: ${movieTitle}\n\nShare options:\n- Facebook\n- Twitter\n- WhatsApp\n- Copy Link`);
         });
     }
-    
+
     modal.addEventListener("click", (e) => {
         if (e.target === modal) modal.style.display = "none";
     });
@@ -337,11 +337,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (API_KEY === "YOUR_TMDB_API_KEY") {
         console.warn("%c⚠️  TMDB API KEY MISSING – replace in tvshows.js", "color:#ffd700; font-size:18px");
     }
-    
+
     showSkeletons();
     await fetchTVShows();
     displayTVShows(0, LOAD_PER_PAGE);
     initModal();
-    
+
     console.log("%c✅ TV Shows page loaded!", "color:#00d0ff; font-weight:700");
 });

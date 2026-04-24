@@ -44,20 +44,36 @@ function getImageUrl(path, size = POSTER_SIZE) {
 }
 
 function generateMovieEpisodes(movie) {
-    const runtime = movieDetails[movie.id]?.runtime || 120; // Default to 120 minutes if no runtime
-    const episodeCount = Math.max(3, Math.min(8, Math.floor(runtime / 20))); // 3-8 episodes based on runtime
-    const episodeLength = Math.floor(runtime / episodeCount);
-    
+    const runtime = movieDetails[movie.id]?.runtime || 120;
+    const episodeCount = Math.max(3, Math.min(8, Math.floor(runtime / 20)));
+
     const episodes = [];
     for (let i = 1; i <= episodeCount; i++) {
         episodes.push({
             number: i,
-            title: `Part ${i}`,
-            duration: `${episodeLength} min`,
-            description: `Watch Part ${i} of ${movie.title}`
+            title: `EP ${i}`,
+            description: `Watch EP ${i} of ${movie.title}`
         });
     }
     return episodes;
+}
+
+function getEmbedUrl(type, id, season = 1, episode = 1) {
+    if (type === 'tv') {
+        return `https://vidsrc.to/embed/tv/${id}/${season}/${episode}`;
+    }
+    return `https://vidsrc.to/embed/movie/${id}`;
+}
+
+async function fetchTVShowEpisodes(tvId, seasonNumber = 1) {
+    try {
+        const response = await fetch(`${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${API_KEY}`);
+        const data = await response.json();
+        return data.episodes || [];
+    } catch (error) {
+        console.error("Error fetching TV episodes:", error);
+        return [];
+    }
 }
 
 async function fetchMovieCredits(movieId) {
@@ -95,7 +111,7 @@ async function fetchMovieTrailer(movieId) {
 async function fetchMovieDetails(movieId) {
     const data = await fetchData(`/movie/${movieId}`);
     if (data.runtime || data.original_language) {
-        movieDetails[movieId] = { 
+        movieDetails[movieId] = {
             runtime: data.runtime,
             original_language: data.original_language
         };
@@ -106,16 +122,16 @@ async function fetchMovieDetails(movieId) {
 function createUpcomingCard(movie) {
     const card = document.createElement("div");
     card.className = "upcoming-card";
-    
+
     const title = movie.title || movie.name || "Untitled";
     const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
     const releaseDate = movie.release_date || movie.first_air_date || "TBA";
     const year = releaseDate !== "TBA" ? releaseDate.split("-")[0] : "TBA";
-    
-    const backdropUrl = movie.backdrop_path 
-        ? `${IMG_BASE}original${movie.backdrop_path}` 
+
+    const backdropUrl = movie.backdrop_path
+        ? `${IMG_BASE}original${movie.backdrop_path}`
         : "https://via.placeholder.com/1920x1080/141414/fff?text=No+Image";
-    
+
     card.innerHTML = `
         <img src="${getImageUrl(movie.poster_path)}" alt="${title}" class="upcoming-card-image">
         <div class="upcoming-card-content">
@@ -137,13 +153,13 @@ function createUpcomingCard(movie) {
             </button>
         </div>
     `;
-    
+
     // Click handler for More Info button
     card.querySelector(".upcoming-card-button").addEventListener("click", (e) => {
         const btn = e.currentTarget;
         const movieId = btn.dataset.movieId;
         const movie = upcomingMovies.find(m => m.id == movieId);
-        
+
         modalBackdrop.style.backgroundImage = `url('${btn.dataset.backdrop}')`;
         modalTitle.textContent = btn.dataset.title;
         modalDescription.textContent = btn.dataset.description || "No description available.";
@@ -154,32 +170,54 @@ function createUpcomingCard(movie) {
         modalRuntime.innerHTML = runtime !== "N/A" ? `<i class="fas fa-clock"></i> ${runtime} min` : "";
         const language = movieDetails[movieId]?.original_language || "N/A";
         modalLanguage.innerHTML = language !== "N/A" ? `<i class="fas fa-globe"></i> ${language.toUpperCase()}` : "";
-        
+
         // Generate and display episodes
         if (movie) {
-            const episodes = generateMovieEpisodes(movie);
+            const isTV = !!movie.first_air_date;
+            const type = isTV ? 'tv' : 'movie';
+            let episodes = [];
+
+            if (isTV) {
+                episodes = await fetchTVShowEpisodes(movie.id, 1);
+            } else {
+                episodes = generateMovieEpisodes(movie);
+            }
+
             modalEpisodes.innerHTML = `
-                <h3><i class="fas fa-list"></i> Movie Parts</h3>
+                <h3><i class="fas fa-list"></i> ${isTV ? 'Episodes' : 'Movie Parts'}</h3>
+                <div id="video-player-container" class="modal-video-section"></div>
                 <div class="episodes-list">
-                    ${episodes.map(episode => `
-                        <div class="episode-item" data-episode="${episode.number}">
-                            <div class="episode-number">${episode.number}</div>
-                            <div class="episode-info">
-                                <div class="episode-title">${episode.title}</div>
-                                <div class="episode-meta">${episode.duration}</div>
+                    ${episodes.map(ep => {
+                const epNum = ep.episode_number || ep.number;
+                const epTitle = ep.name || ep.title || `Episode ${epNum}`;
+                return `
+                            <div class="episode-item" data-episode="${epNum}">
+                                <div class="episode-number">${epNum}</div>
+                                <div class="episode-info">
+                                    <div class="episode-title">${epTitle}</div>
+                                </div>
+                                <button class="episode-play-btn">
+                                    <i class="fas fa-play"></i>
+                                </button>
                             </div>
-                            <button class="episode-play-btn">
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                    `).join('')}
+                        `;
+            }).join('')}
                 </div>
             `;
-            
-            // Add click handlers for episode play buttons
-            modalEpisodes.querySelectorAll('.episode-play-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    alert(`🎬 Playing ${movie.title} - Part ${btn.closest('.episode-item').dataset.episode}\n\n(This would play the specific part of the movie in a real app!)`);
+
+            // Add click handlers for episode items
+            modalEpisodes.querySelectorAll('.episode-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const epNum = item.dataset.episode;
+                    const backdropPlayer = document.getElementById('backdrop-player');
+                    const embedUrl = getEmbedUrl(type, movie.id, 1, epNum);
+
+                    if (backdropPlayer) {
+                        backdropPlayer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+                        backdropPlayer.classList.add('active');
+                    }
+
+                    document.querySelector('.modal-content').scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
 
@@ -205,7 +243,7 @@ function createUpcomingCard(movie) {
                     <p style="color: #aaa; font-size: 14px;">Cast information not available.</p>
                 `;
             }
-            
+
             // Fetch and display recommendations
             const recommendations = await fetchMovieRecommendations(movie.id);
             if (recommendations.length > 0) {
@@ -232,7 +270,7 @@ function createUpcomingCard(movie) {
                     <p style="color: #aaa; font-size: 14px;">No recommendations available.</p>
                 `;
             }
-            
+
             // Fetch and display trailer
             const trailerKey = await fetchMovieTrailer(movie.id);
             if (trailerKey) {
@@ -261,10 +299,10 @@ function createUpcomingCard(movie) {
                 `;
             }
         }
-        
+
         modal.style.display = "flex";
     });
-    
+
     return card;
 }
 
@@ -282,12 +320,12 @@ function showSkeletons(count = 12) {
 }
 
 // ====================== API CALLS ======================
-async function fetchData(endpoint) {
+async function fetchData(endpoint, page = 1) {
     if (!API_KEY || API_KEY === "YOUR_TMDB_API_KEY") {
         console.error("❌ Please replace YOUR_TMDB_API_KEY with a real TMDB API key!");
         return { results: [] };
     }
-    
+
     try {
         const separator = endpoint.includes('?') ? '&' : '?';
         const url = `${BASE_URL}${endpoint}${separator}api_key=${API_KEY}&language=en-US`;
@@ -342,14 +380,14 @@ function displayUpcoming(startIdx = 0, endIdx = LOAD_PER_PAGE) {
     if (startIdx === 0) {
         upcomingGrid.innerHTML = "";
     }
-    
+
     for (let i = startIdx; i < Math.min(endIdx, upcomingMovies.length); i++) {
         const card = createUpcomingCard(upcomingMovies[i]);
         upcomingGrid.appendChild(card);
     }
-    
+
     displayedCount = Math.min(endIdx, upcomingMovies.length);
-    
+
     // Show/hide load more button
     if (displayedCount >= upcomingMovies.length) {
         loadMoreBtn.style.display = "none";
@@ -381,10 +419,10 @@ loadMoreBtn.addEventListener("click", async () => {
 let searchTimeout;
 searchInput.addEventListener("input", async () => {
     clearTimeout(searchTimeout);
-    
+
     searchTimeout = setTimeout(async () => {
         const query = searchInput.value.trim();
-        
+
         if (query.length < 2) {
             currentQuery = "";
             currentPage = 1;
@@ -393,7 +431,7 @@ searchInput.addEventListener("input", async () => {
             displayUpcoming(0, LOAD_PER_PAGE);
             return;
         }
-        
+
         currentQuery = query;
         currentPage = 1;
         showSkeletons();
@@ -414,12 +452,12 @@ searchInput.addEventListener("keydown", (e) => {
 
 searchBtn.addEventListener("click", async () => {
     const query = searchInput.value.trim();
-    
+
     if (query.length < 2) {
         searchInput.focus();
         return;
     }
-    
+
     currentQuery = query;
     currentPage = 1;
     showSkeletons();
@@ -434,9 +472,23 @@ searchBtn.addEventListener("click", async () => {
 
 // ====================== MODAL ======================
 function initModal() {
-    modalClose.addEventListener("click", () => modal.style.display = "none");
-    document.getElementById("modal-close-btn").addEventListener("click", () => modal.style.display = "none");
-    
+    modalClose.addEventListener("click", () => {
+        modal.style.display = "none";
+        const backdropPlayer = document.getElementById('backdrop-player');
+        if (backdropPlayer) {
+            backdropPlayer.innerHTML = '';
+            backdropPlayer.classList.remove('active');
+        }
+    });
+    document.getElementById("modal-close-btn").addEventListener("click", () => {
+        modal.style.display = "none";
+        const backdropPlayer = document.getElementById('backdrop-player');
+        if (backdropPlayer) {
+            backdropPlayer.innerHTML = '';
+            backdropPlayer.classList.remove('active');
+        }
+    });
+
     modalPlayBtn.addEventListener("click", () => {
         modalPlayBtn.innerHTML = `
             <i class="fas fa-play"></i>
@@ -450,20 +502,20 @@ function initModal() {
             `;
         }, 1200);
     });
-    
+
     // Action buttons event listeners
     const downloadBtn = document.getElementById("download-btn");
     const watchlistBtn = document.getElementById("watchlist-btn");
     const reportBtn = document.getElementById("report-btn");
     const shareBtn = document.getElementById("share-btn");
-    
+
     if (downloadBtn) {
         downloadBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             alert("📥 Download feature would be available in premium version.");
         });
     }
-    
+
     if (watchlistBtn) {
         watchlistBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -475,14 +527,14 @@ function initModal() {
             }, 2000);
         });
     }
-    
+
     if (reportBtn) {
         reportBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             alert("⚠️ Thank you for reporting. Our team will review this content.");
         });
     }
-    
+
     if (shareBtn) {
         shareBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -490,7 +542,7 @@ function initModal() {
             alert(`📤 Share: ${movieTitle}\n\nShare options:\n- Facebook\n- Twitter\n- WhatsApp\n- Copy Link`);
         });
     }
-    
+
     modal.addEventListener("click", (e) => {
         if (e.target === modal) modal.style.display = "none";
     });
@@ -501,11 +553,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (API_KEY === "YOUR_TMDB_API_KEY") {
         console.warn("%c⚠️  TMDB API KEY MISSING – replace in upcoming.js", "color:#ffd700; font-size:18px");
     }
-    
+
     showSkeletons();
     await fetchUpcoming(1);
     displayUpcoming(0, LOAD_PER_PAGE);
     initModal();
-    
+
     console.log("%c✅ Upcoming Movies page loaded!", "color:#00d0ff; font-weight:700");
 });

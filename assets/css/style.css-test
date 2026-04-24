@@ -140,7 +140,7 @@ a {
 }
 
 .search-input {
-    background: rgba(0,0,0,0.5);
+    background: none;
     border: none;
     outline: none;
     color: #fff;
@@ -150,7 +150,7 @@ a {
 }
 
 .search-btn {
-    background: rgba(0,0,0,0.5);
+    background: none;
     border: none;
     color: #fff;
     font-size: 20px;
@@ -213,7 +213,7 @@ a {
 
 .carousel-slide.active {
     opacity: 1;
-    z-index: 1000;
+    z-index: 10;
 }
 
 .hero-background {
@@ -552,7 +552,7 @@ a {
 .movie-card:hover {
     transform: scale(1.08);
     box-shadow: 0 20px 30px rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    z-index: 10;
 }
 
 .movie-card img {
@@ -648,218 +648,64 @@ a {
     transform: scale(1.2);
 }
 
-/* ================== MODAL BASE ================== */
+/* ================== MODAL ================== */
 .modal {
     display: none;
     position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.85);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
     z-index: 9999;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    overflow-y: auto;
 }
 
 .modal-content {
-    width: 100%;
-    max-width: 100%;
+    width: 90%;
+    max-width: 920px;
     background: #141414;
-    border-radius: 0;
+    border-radius: 24px;
     overflow-y: auto;
-    min-height: 100vh;
+    height: 90vh;
     position: relative;
-    box-shadow: none;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
 }
 
-.modal-close {
-    position: fixed;
-    top: 18px;
-    right: 24px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 1.5px solid rgba(255,255,255,0.15);
-    border-radius: 50%;
+.modal-close-new {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: none;
+    border: none;
     color: #fff;
-    font-size: 22px;
+    font-size: 32px;
     cursor: pointer;
-    z-index: 10001;
-    width: 44px;
-    height: 44px;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(6px);
-    transition: background 0.2s, transform 0.2s;
-}
-.modal-close:hover {
-    background: rgba(255,255,255,0.15);
-    transform: scale(1.1);
 }
 
-/* ===== NETFLIX-STYLE HERO BANNER ===== */
 .modal-backdrop {
-    position: relative;
-    width: 100%;
-    height: 85vh;
-    min-height: 520px;
+    height: 420px;
     background-size: cover;
-    background-position: center top;
-    background-repeat: no-repeat;
-    overflow: hidden;
-    display: flex;
-    align-items: flex-end;  /* content sits at the bottom */
-}
-
-/* The iframe/video fills the entire hero */
-.backdrop-player-container {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    border-radius: 0;
-    padding: 0;
-    margin: 0;
-}
-
-.backdrop-player-container iframe,
-#backdrop-player iframe {
-    width: 100% !important;
-    height: 100% !important;
-    border: none !important;
-    display: block !important;
-}
-
-.backdrop-player-container video,
-#backdrop-player video {
-    width: 100% !important;
-    height: 100% !important;
-    display: block !important;
-    object-fit: cover;
-}
-
-/* Multi-layer gradient overlay — dark bottom + subtle vignette */
-.hero-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    background:
-        linear-gradient(to top,  rgba(20,20,20,1)    0%,
-                                  rgba(20,20,20,0.85) 18%,
-                                  rgba(20,20,20,0.3)  45%,
-                                  transparent         70%),
-        linear-gradient(to right, rgba(20,20,20,0.6) 0%, transparent 50%);
-    pointer-events: none;
-}
-
-/* Content layer sits above overlay */
-.hero-content {
+    background-position: center;
     position: relative;
-    z-index: 3;
-    width: 100%;
-    padding: 0 48px 48px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
 }
 
-/* Title inside hero */
-.hero-content .modal-title {
-    font-size: clamp(28px, 5vw, 56px);
-    font-weight: 900;
-    letter-spacing: -1px;
-    line-height: 1.05;
-    color: #fff;
-    text-shadow: 0 2px 20px rgba(0,0,0,0.8);
-    margin: 0;
-    max-width: 700px;
-}
-
-/* Meta row inside hero */
-.hero-content .modal-meta {
-    display: flex;
-    gap: 16px;
-    font-size: 15px;
-    color: rgba(255,255,255,0.75);
-    flex-wrap: wrap;
-    margin: 0;
-}
-
-/* Description inside hero */
-.hero-content .modal-description {
-    font-size: 15px;
-    color: rgba(255,255,255,0.7);
-    max-width: 600px;
-    line-height: 1.5;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-/* CTA buttons inside hero */
-.hero-buttons {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-top: 6px;
-}
-
-.hero-buttons .btn-play {
-    padding: 14px 32px;
-    background: #fff;
-    color: #000;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 800;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background 0.2s, transform 0.15s;
-    letter-spacing: 0.5px;
-}
-.hero-buttons .btn-play:hover {
-    background: rgba(255,255,255,0.85);
-    transform: scale(1.04);
-}
-.hero-buttons .btn-play i { font-size: 18px; }
-
-.hero-buttons .btn-info {
-    padding: 14px 28px;
-    background: rgba(109,109,110,0.7);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    backdrop-filter: blur(4px);
-    transition: background 0.2s, transform 0.15s;
-}
-.hero-buttons .btn-info:hover {
-    background: rgba(109,109,110,0.5);
-    transform: scale(1.04);
-}
-
-/* Bottom fade into the info section */
 .modal-backdrop::after {
     content: '';
     position: absolute;
-    bottom: -2px;
+    bottom: 0;
     left: 0;
     right: 0;
-    height: 80px;
+    height: 180px;
     background: linear-gradient(transparent, #141414);
-    z-index: 2;
-    pointer-events: none;
 }
-
 
 .modal-actions-box {
     display: flex;
@@ -1519,7 +1365,7 @@ a {
 }
 
 .trailer-modal-close {
-    background: rgba(0,0,0,0.5);
+    background: none;
     border: none;
     color: #fff;
     font-size: 24px;
@@ -1927,7 +1773,7 @@ a {
 }
 
 .trailer-modal-close {
-    background: rgba(0,0,0,0.5);
+    background: none;
     border: none;
     color: #fff;
     font-size: 28px;
@@ -2028,7 +1874,7 @@ a {
 }
 
 .trailer-modal-close {
-    background: rgba(0,0,0,0.5);
+    background: none;
     border: none;
     color: #fff;
     font-size: 28px;
@@ -2271,30 +2117,3 @@ a {
  
  
  
-
- / *   = = = = = = = = = = = = = = = = = =   I N F I N I T E   S C R O L L   L O A D E R   = = = = = = = = = = = = = = = = = =   * / 
- . l o a d e r - c o n t a i n e r   { 
-         d i s p l a y :   f l e x ; 
-         j u s t i f y - c o n t e n t :   c e n t e r ; 
-         a l i g n - i t e m s :   c e n t e r ; 
-         p a d d i n g :   2 0 p x ; 
-         w i d t h :   1 0 0 % ; 
- } 
- 
- . l o a d e r - s p i n n e r   { 
-         w i d t h :   4 0 p x ; 
-         h e i g h t :   4 0 p x ; 
-         b o r d e r :   4 p x   s o l i d   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 ) ; 
-         b o r d e r - t o p :   4 p x   s o l i d   # 0 0 d 0 f f ; 
-         b o r d e r - r a d i u s :   5 0 % ; 
-         a n i m a t i o n :   s p i n   1 s   l i n e a r   i n f i n i t e ; 
- } 
- 
- @ k e y f r a m e s   s p i n   { 
-         0 %   {   t r a n s f o r m :   r o t a t e ( 0 d e g ) ;   } 
-         1 0 0 %   {   t r a n s f o r m :   r o t a t e ( 3 6 0 d e g ) ;   } 
- } 
- 
- 
- 
-

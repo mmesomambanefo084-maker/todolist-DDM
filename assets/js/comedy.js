@@ -60,6 +60,88 @@ function generateMovieEpisodes(movie) {
     return episodes;
 }
 
+function showAllEpisodesModal(movie, baseEpisodes) {
+    const runtime = movieDetails[movie.id]?.runtime || 120;
+    const baseEpisodeCount = Math.max(3, Math.min(8, Math.floor(runtime / 20)));
+    const totalCount = baseEpisodeCount + 7;
+    const episodeLength = Math.floor(runtime / baseEpisodeCount);
+
+    const episodes = [];
+    for (let i = 1; i <= totalCount; i++) {
+        episodes.push({
+            number: i,
+            title: `EP ${i}`,
+            duration: `${episodeLength} min`,
+            description: `Watch EP ${i} of ${movie.title || movie.name}`
+        });
+    }
+
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'all-episodes-modal';
+    
+    modalDiv.innerHTML = `
+        <div class="all-episodes-content">
+            <div class="all-episodes-header">
+                <h3><i class="fas fa-list"></i> All Episodes - ${movie.title || movie.name || "Untitled"}</h3>
+                <button class="all-episodes-close">&times;</button>
+            </div>
+            <div class="all-episodes-list">
+                ${episodes.map(episode => `
+                    <div class="episode-item" data-episode="${episode.number}">
+                        <div class="episode-number">${episode.number}</div>
+                        <div class="episode-info">
+                            <div class="episode-title">${episode.title}</div>
+                            <div class="episode-meta">${episode.duration}</div>
+                        </div>
+                        <div class="episode-actions">
+                            <button class="episode-download-btn" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="episode-play-btn" title="Play">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalDiv);
+
+    modalDiv.querySelector('.all-episodes-close').addEventListener('click', () => {
+        modalDiv.remove();
+    });
+
+    modalDiv.addEventListener('click', (e) => {
+        if (e.target === modalDiv) {
+            modalDiv.remove();
+        }
+    });
+
+    modalDiv.querySelectorAll('.episode-item').forEach(item => {
+        item.addEventListener('click', () => {
+            item.classList.toggle('show-download');
+        });
+
+        const playBtn = item.querySelector('.episode-play-btn');
+        if(playBtn) {
+            playBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                alert(`🎬 Playing ${movie.title || movie.name || "Untitled"} - EP ${item.dataset.episode}\n\n(This would play the specific EP of the movie in a real app!)`);
+            });
+        }
+
+        const downloadBtn = item.querySelector('.episode-download-btn');
+        if(downloadBtn) {
+            downloadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                alert(`📥 Downloading ${movie.title || movie.name || "Untitled"} - EP ${item.dataset.episode}...`);
+            });
+        }
+    });
+}
+
 async function fetchMovieCredits(movieId) {
     try {
         const response = await fetch(`${BASE_URL}/movie/${movieId}/credits?api_key=${API_KEY}`);
@@ -160,6 +242,9 @@ function createMovieCard(movie) {
                             </button>
                         </div>
                     `).join('')}
+                    <div class="episode-item load-more-episodes" style="justify-content: center; background: rgba(0,208,255,0.1); border: 1px dashed rgba(0,208,255,0.4);">
+                        <span style="color: #00d0ff; font-weight: bold; font-size: 15px;"><i class="fas fa-plus"></i> Load More</span>
+                    </div>
                 </div>
             `;
 
